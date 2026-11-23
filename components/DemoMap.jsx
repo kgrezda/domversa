@@ -93,7 +93,7 @@ export default function DemoMap() {
         root.classList.add('entered'); $('.dv-crumb').textContent = 'Prishtina › Lakrishte';
         setK(0);
         map.flyTo({ center: PILOT_LNGLAT, zoom: 16.4, pitch: 58, bearing: -22, duration: reduce ? 0 : 3800, essential: true });
-        map.once('moveend', () => map.once('idle', () => { if (!pilot.placed) placePilot(findPilot()); grow(); }));
+        map.once('moveend', () => map.once('idle', () => { if (!pilot.placed) { const hit = findPilot(); if (hit) placePilot(hit); } grow(); }));
       };
       const leave = () => {
         entered = false; closePanel(); root.classList.remove('entered'); $('.dv-crumb').textContent = 'Prishtina';
@@ -110,12 +110,12 @@ export default function DemoMap() {
         $('.dv-det [data-a=contact]').onclick = () => { $('.dv-det .msg').textContent = 'Në këtë version nuk dërgohet asnjë mesazh. Më vonë kërkesa shkon direkt te shitësi.'; };
       };
       const openPanel = () => {
-        if (!pilot.placed) placePilot(findPilot());
+        if (!pilot.placed) { const hit = findPilot(); if (hit) placePilot(hit); }
         selected = true; selFloor = -1; paint();
         const us = [...pilot.units].sort((a, c) => c.fl - a.fl);
         const p = $('.dv-panel');
         p.innerHTML = `<button class="close" type="button" aria-label="Mbyll">✕</button>
-          <p class="kick">Lakrishte · ${pilot.fl} kate${pilot.found ? '' : ' (forma e përafërt)'}</p><h2>${pilot.name}</h2>
+          <p class="kick">Lakrishte${pilot.found ? ` · ${pilot.fl} kate` : ' · modeli 3D po përgatitet'}</p><h2>${pilot.name}</h2>
           <span class="stat" style="background:${COL.sale}">${LBL.sale} · ${us.length} banesa</span>
           <p class="kick">Zgjidh banesën: kati i saj ndriçohet në objekt.</p>
           <div class="units">${us.map((u, i) => `<button class="unit" type="button" data-i="${i}"><span>Kati ${u.fl}</span><span>${u.r} · ${u.m} m²</span><span class="p">${eur(u.p)}</span></button>`).join('')}</div>
