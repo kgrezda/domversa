@@ -3,8 +3,8 @@
 Platforma që e tregon pronën në qytetin real: harta 3D e Prishtinës, objektet dhe banesat në shitje ose me qira.
 
 ## Gjendja
-- Faza 1: demo e hartës (zona, afrimi në Lakrishte, objektet si box-e me ngjyrë sipas statusit, objekti pilot me 4 banesa).
-- Të dhënat janë ende shembull skematik (`lib/demoData.js`).
+- Faza 1: harta reale e Prishtinës, zonat (kufij të përafërt), afrimi në Lakrishte, ndërtesat reale si box-e, objekti pilot me 4 banesa.
+- Harta bazë dhe ndërtesat: OpenStreetMap përmes OpenFreeMap (pa çelës). Objekti pilot në 42.655715, 21.151035; çmimet e banesave janë shembull (`lib/demoData.js`).
 
 ## Teknologjia
 - Next.js (App Router) + React
