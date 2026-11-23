@@ -225,7 +225,7 @@ export default function DemoMap() {
         <button className="box dv-north" type="button" aria-label="Kthe drejtimin">⌂</button>
       </div>
       <div className="legend dv-legend" />
-      <p className="note">Harta dhe ndërtesat: OpenStreetMap. Kufijtë e zonave janë të përafërt; çmimet e banesave janë shembull.</p>
+      <p className="note">Harta dhe ndërtesat: OpenStreetMap. Kufiri i Lakrishtes është i vizatuar saktë; zonat e tjera janë ende të përafërta. Çmimet e banesave janë shembull.</p>
       <aside className="box dv-panel" aria-live="polite" />
       <div className="box dv-tip" />
       <div className="box dv-toast" role="status" />
