@@ -154,8 +154,13 @@ export default function DemoMap() {
         map.addSource('zones', { type: 'geojson', data: zonesGeoJSON() });
         map.addSource('pilot', { type: 'geojson', data: fc([]) });
         map.addSource('pilot-foot', { type: 'geojson', data: fc([]) });
-        map.addLayer({ id: 'zones-fill', type: 'fill', source: 'zones', paint: { 'fill-color': ['case', ['get', 'on'], '#0b4f8a', '#9d998f'], 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.22, 14.2, 0.1, 15.2, 0] } }, firstSymbol);
-        map.addLayer({ id: 'zones-line', type: 'line', source: 'zones', paint: { 'line-color': ['case', ['get', 'on'], '#0b4f8a', '#8a867c'], 'line-width': ['case', ['get', 'on'], 2.5, 1.2], 'line-dasharray': [3, 2], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.9, 15.2, 0] } }, firstSymbol);
+        // Zona aktive (Lakrishte): sipërfaqe e theksuar që mbetet e dukshme edhe nga afër, kufi i plotë me "shkëlqim".
+        map.addLayer({ id: 'zones-fill', type: 'fill', source: 'zones', paint: {
+          'fill-color': ['case', ['get', 'on'], '#1f6fd1', '#9d998f'],
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 12, ['case', ['get', 'on'], 0.38, 0.18], 14.2, ['case', ['get', 'on'], 0.24, 0.08], 15.2, ['case', ['get', 'on'], 0.12, 0], 17, ['case', ['get', 'on'], 0.07, 0]] } }, firstSymbol);
+        map.addLayer({ id: 'zones-line', type: 'line', source: 'zones', filter: ['!', ['get', 'on']], paint: { 'line-color': '#8a867c', 'line-width': 1.2, 'line-dasharray': [3, 2], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.9, 15.2, 0] } }, firstSymbol);
+        map.addLayer({ id: 'zone-active-halo', type: 'line', source: 'zones', filter: ['get', 'on'], layout: { 'line-join': 'round' }, paint: { 'line-color': '#1f6fd1', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 8, 16, 14], 'line-opacity': 0.22, 'line-blur': 2 } }, firstSymbol);
+        map.addLayer({ id: 'zone-active-line', type: 'line', source: 'zones', filter: ['get', 'on'], layout: { 'line-join': 'round' }, paint: { 'line-color': '#0b4f8a', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 3, 16, 4.5], 'line-opacity': 0.95 } }, firstSymbol);
         const ext = { 'fill-extrusion-opacity': 0.96, 'fill-extrusion-vertical-gradient': true };
         map.addLayer({ id: 'bld-3d', type: 'fill-extrusion', source: vec, 'source-layer': 'building', minzoom: 14, filter: ['!=', ['get', 'hide_3d'], true],
           paint: { ...ext, 'fill-extrusion-color': grayColor(), 'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0] } });
