@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { ZONES, COL, TINT, LBL, PILOT, PILOT_LNGLAT, ll, rectAround, zonesGeoJSON, containsPoint } from '@/lib/demoData';
+import { CITIES, ZONES, COL, TINT, LBL, PILOT, PILOT_LNGLAT, ll, rectAround, zonesGeoJSON, containsPoint } from '@/lib/demoData';
 
 const eur = (n) => n.toLocaleString('de-DE') + ' €';
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
@@ -13,7 +13,7 @@ export default function DemoMap() {
   const rootRef = useRef(null);
 
   useEffect(() => {
-    let map, cancelled = false, anim = 0, enterTimer = 0;
+    let map, cancelled = false, anim = 0, enterTimer = 0, cleanup = () => {};
     const root = rootRef.current;
     const $ = (s) => root.querySelector(s);
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -87,16 +87,36 @@ export default function DemoMap() {
       };
 
       const wide = () => window.innerWidth > 600;
+      // Menytë "perde": qyteti lart, filtrat poshtë. Vetëm një menu e hapur njëherësh.
+      const menus = [['.dv-citybtn', '.dv-citymenu'], ['.dv-filterbtn', '.dv-filtermenu']];
+      const closeMenus = () => menus.forEach(([b, m]) => { $(m).classList.remove('open'); $(b).setAttribute('aria-expanded', 'false'); });
+      const toggleMenu = (b, m) => {
+        const open = !$(m).classList.contains('open');
+        closeMenus();
+        if (open) { $(m).classList.add('open'); $(b).setAttribute('aria-expanded', 'true'); }
+      };
+      const setCity = (c, zone) => {
+        $('.dv-cityname').textContent = c.n;
+        $('.dv-zone').textContent = zone ? '› ' + zone : '';
+        $('.dv-citymenu').querySelectorAll('[data-c]').forEach((x) => x.setAttribute('aria-current', x.dataset.c === c.n));
+      };
+      const goCity = (c) => {
+        closeMenus();
+        if (c.on) { if (entered) leave(); else { root.classList.remove('away'); setCity(c); map.flyTo({ ...START, duration: reduce ? 0 : 2600 }); } return; }
+        entered = false; closePanel(); root.classList.remove('entered'); root.classList.add('away'); setCity(c);
+        map.flyTo({ center: c.c, zoom: 13.6, pitch: 0, bearing: 0, duration: reduce ? 0 : 3000, essential: true });
+        toast(`${c.n}: zonat dhe objektet shtohen së shpejti.`);
+      };
       const closePanel = () => { $('.dv-panel').classList.remove('open'); selected = false; selFloor = -1; paint(); };
       const enter = () => {
         if (entered) return; entered = true;
-        root.classList.add('entered'); $('.dv-crumb').textContent = 'Prishtina › Lakrishte';
+        root.classList.add('entered'); root.classList.remove('away'); setCity(CITIES[0], 'Lakrishte');
         setK(0);
         map.flyTo({ center: PILOT_LNGLAT, zoom: 16.4, pitch: 58, bearing: -22, duration: reduce ? 0 : 3800, essential: true });
         map.once('moveend', () => map.once('idle', () => { if (!pilot.placed) { const hit = findPilot(); if (hit) placePilot(hit); } grow(); }));
       };
       const leave = () => {
-        entered = false; closePanel(); root.classList.remove('entered'); $('.dv-crumb').textContent = 'Prishtina';
+        entered = false; closePanel(); root.classList.remove('entered', 'away'); setCity(CITIES[0]);
         map.flyTo({ ...START, duration: reduce ? 0 : 2600 });
       };
 
@@ -185,15 +205,30 @@ export default function DemoMap() {
       map.on('mouseout', () => { $('.dv-tip').style.display = 'none'; });
       map.on('error', (e) => { console.warn(e && e.error); });
 
+      // Menyja e qyteteve
+      const cm = $('.dv-citymenu');
+      cm.innerHTML = CITIES.map((c) => `<button type="button" role="menuitem" data-c="${c.n}"><span>${c.n}</span><small>${c.on ? 'aktive' : 'së shpejti'}</small></button>`).join('');
+      cm.querySelectorAll('[data-c]').forEach((btn) => { btn.onclick = () => goCity(CITIES.find((c) => c.n === btn.dataset.c)); });
+      $('.dv-citybtn').onclick = (ev) => { ev.stopPropagation(); toggleMenu('.dv-citybtn', '.dv-citymenu'); };
+      setCity(CITIES[0]);
+
+      // Menyja e filtrave: Shitje, Qira, Të reja, Pa listim
       const LEG = [['sale', 'Shitje', COL.sale], ['rent', 'Qira', COL.rent], ['new', 'Të reja', COL.new], ['none', 'Pa listim', '#cfcac0']];
-      const leg = $('.dv-legend');
-      leg.innerHTML = LEG.map(([s, l, c]) => `<button class="chip box" type="button" aria-pressed="true" data-s="${s}"><i style="background:${c}"></i>${l}</button>`).join('');
-      leg.querySelectorAll('.chip').forEach((btn) => {
-        btn.onclick = () => {
+      const fm = $('.dv-filtermenu');
+      fm.innerHTML = LEG.map(([s, l, c]) => `<button type="button" role="menuitemcheckbox" aria-checked="true" data-s="${s}"><i style="background:${c}"></i><span>${l}</span><b aria-hidden="true">✓</b></button>`).join('');
+      const filterLabel = () => { $('.dv-filtercount').textContent = shown.size === LEG.length ? 'Të gjitha' : `${shown.size} nga ${LEG.length}`; };
+      fm.querySelectorAll('[data-s]').forEach((btn) => {
+        btn.onclick = (ev) => {
+          ev.stopPropagation();
           const s = btn.dataset.s; shown.has(s) ? shown.delete(s) : shown.add(s);
-          btn.setAttribute('aria-pressed', shown.has(s)); paint();
+          btn.setAttribute('aria-checked', shown.has(s)); filterLabel(); paint();
         };
       });
+      $('.dv-filterbtn').onclick = (ev) => { ev.stopPropagation(); toggleMenu('.dv-filterbtn', '.dv-filtermenu'); };
+      filterLabel();
+      const onDocClick = (ev) => { if (!ev.target.closest('.dv-citymenu, .dv-filtermenu')) closeMenus(); };
+      document.addEventListener('click', onDocClick);
+      cleanup = () => document.removeEventListener('click', onDocClick);
       $('.dv-enter').onclick = enter;
       $('.dv-back').onclick = leave;
       $('.dv-zin').onclick = () => map.zoomIn();
@@ -202,7 +237,7 @@ export default function DemoMap() {
     })();
 
     return () => {
-      cancelled = true; cancelAnimationFrame(anim); clearTimeout(enterTimer);
+      cancelled = true; cancelAnimationFrame(anim); clearTimeout(enterTimer); cleanup();
       if (map) map.remove();
     };
   }, []);
@@ -211,7 +246,12 @@ export default function DemoMap() {
     <div className="dv" ref={rootRef}>
       <div className="dv-map" aria-label="Harta 3D e Prishtinës" />
       <header className="top">
-        <div className="brand box"><b>DOMVERSA</b><span className="crumb dv-crumb">Prishtina</span></div>
+        <div className="brand box">
+          <b>DOMVERSA</b>
+          <button className="citybtn dv-citybtn" type="button" aria-haspopup="menu" aria-expanded="false">
+            <span className="dv-cityname">Prishtinë</span><span className="zone dv-zone" /><span className="caret" aria-hidden="true">▾</span>
+          </button>
+        </div>
         <button className="box back dv-back" type="button">← Qyteti</button>
       </header>
       <section className="intro box">
@@ -224,7 +264,14 @@ export default function DemoMap() {
         <button className="box dv-zout" type="button" aria-label="Zvogëlo">−</button>
         <button className="box dv-north" type="button" aria-label="Kthe drejtimin">⌂</button>
       </div>
-      <div className="legend dv-legend" />
+      <div className="box menu citymenu dv-citymenu" role="menu" aria-label="Zgjidh qytetin" />
+      <div className="filters">
+        <div className="box menu filtermenu dv-filtermenu" role="menu" aria-label="Çka të shfaqet" />
+        <button className="box filterbtn dv-filterbtn" type="button" aria-haspopup="menu" aria-expanded="false">
+          <span className="dots" aria-hidden="true"><i style={{ background: COL.sale }} /><i style={{ background: COL.rent }} /><i style={{ background: COL.new }} /></span>
+          Shfaq: <span className="dv-filtercount">Të gjitha</span> <span className="caret" aria-hidden="true">▾</span>
+        </button>
+      </div>
       <p className="note">Harta dhe ndërtesat: OpenStreetMap. Kufiri i Lakrishtes është i vizatuar saktë; zonat e tjera janë ende të përafërta. Çmimet e banesave janë shembull.</p>
       <aside className="box dv-panel" aria-live="polite" />
       <div className="box dv-tip" />
