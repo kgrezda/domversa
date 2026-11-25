@@ -151,6 +151,16 @@ export default function DemoMap() {
         const style = map.getStyle();
         const firstSymbol = (style.layers.find((l) => l.type === 'symbol') || {}).id;
         vec = (Object.entries(style.sources).find(([, src]) => src.type === 'vector') || [])[0] || null;
+        // Numrat e adresave: të vegjël, gri të tejdukshëm, vetëm nga afër (për orientim te objekti).
+        style.layers.filter((l) => l['source-layer'] === 'housenumber').forEach((l) => {
+          try {
+            map.setLayerZoomRange(l.id, 17, 24);
+            map.setLayoutProperty(l.id, 'text-size', 10);
+            map.setPaintProperty(l.id, 'text-color', 'rgba(95,99,110,0.55)');
+            map.setPaintProperty(l.id, 'text-halo-color', 'rgba(255,255,255,0.5)');
+            map.setPaintProperty(l.id, 'text-halo-width', 1);
+          } catch (e) { /* stili mund të mos e ketë këtë shtresë */ }
+        });
         map.addSource('zones', { type: 'geojson', data: zonesGeoJSON() });
         map.addSource('pilot', { type: 'geojson', data: fc([]) });
         map.addSource('pilot-foot', { type: 'geojson', data: fc([]) });
