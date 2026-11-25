@@ -154,10 +154,10 @@ export default function DemoMap() {
         // Numrat e adresave: të vegjël, gri të tejdukshëm, vetëm nga afër (për orientim te objekti).
         style.layers.filter((l) => l['source-layer'] === 'housenumber').forEach((l) => {
           try {
-            map.setLayerZoomRange(l.id, 17, 24);
-            map.setLayoutProperty(l.id, 'text-size', 10);
-            map.setPaintProperty(l.id, 'text-color', 'rgba(95,99,110,0.55)');
-            map.setPaintProperty(l.id, 'text-halo-color', 'rgba(255,255,255,0.5)');
+            map.setLayerZoomRange(l.id, 16, 24);
+            map.setLayoutProperty(l.id, 'text-size', 11);
+            map.setPaintProperty(l.id, 'text-color', 'rgba(30,33,40,0.85)');
+            map.setPaintProperty(l.id, 'text-halo-color', 'rgba(255,255,255,0.7)');
             map.setPaintProperty(l.id, 'text-halo-width', 1);
           } catch (e) { /* stili mund të mos e ketë këtë shtresë */ }
         });
